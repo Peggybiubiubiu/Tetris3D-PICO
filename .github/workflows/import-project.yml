@@ -1,0 +1,26 @@
+name: Import Tetris3D project
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify and restore supplied project
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat project.bundle.part00 project.bundle.part01 project.bundle.part02 > /tmp/project.bundle
+          echo "1f18df7d6b0cece92b6302a116fa315c72612ba4851d87310df38d0501dee0ae  /tmp/project.bundle" | sha256sum -c -
+          git bundle verify /tmp/project.bundle
+          git clone /tmp/project.bundle /tmp/tetris-source
+          git -C /tmp/tetris-source archive HEAD | tar -x -C "$GITHUB_WORKSPACE"
+          git rm project.bundle.part00 project.bundle.part01 project.bundle.part02 bundle.sha256
+          git add Assets Packages ProjectSettings SpatialHost AGENTS.md LICENSE README.md README-PICO.md .gitignore
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Restore complete PICO project from verified Git bundle"
+          git push origin HEAD:main
+
